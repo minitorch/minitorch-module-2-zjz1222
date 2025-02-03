@@ -29,10 +29,11 @@ def test_one_args(
     "Test one-arg functions compared to floats"
     name, base_fn, tensor_fn = fn
     t2 = tensor_fn(t1)
-    for ind in t2._tensor.indices():
+    
+    print("Start Tensor")
+    for ind in t2._tensor.indices(): 
+        print(f"Assert: {t2[ind]}; {base_fn(t1[ind])}")
         assert_close(t2[ind], base_fn(t1[ind]))
-
-
 @given(shaped_tensors(2))
 @pytest.mark.task2_3
 @pytest.mark.parametrize("fn", two_arg)
