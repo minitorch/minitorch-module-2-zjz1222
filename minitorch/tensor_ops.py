@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Callable, Optional, Type
-
 import numpy as np
 from typing_extensions import Protocol
-
+from numpy import array
 from . import operators
 from .tensor_data import (
     MAX_DIMS,
@@ -269,7 +268,19 @@ def tensor_map(fn: Callable[[float], float]) -> Any:
         in_strides: Strides,
     ) -> None:
         # TODO: Implement for Task 2.3.
-        raise NotImplementedError("Need to implement for Task 2.3")
+        
+        
+        for i in range(operators.prod(out_shape)):
+            
+            out_index: Index = array(out_shape)
+            in_index: Index = array(in_shape)
+
+            to_index(i, out_shape, out_index)
+            broadcast_index(out_index, out_shape, in_shape, in_index)
+            
+            in_position = index_to_position(in_index, in_strides)
+            out_position = index_to_position(out_index, out_strides)
+            out[out_position] = fn(in_storage[in_position])
 
     return _map
 
@@ -319,7 +330,26 @@ def tensor_zip(fn: Callable[[float, float], float]) -> Any:
         b_strides: Strides,
     ) -> None:
         # TODO: Implement for Task 2.3.
-        raise NotImplementedError("Need to implement for Task 2.3")
+        
+        #out = np.zeros(operators.prod(out_shape), dtype = np.float64)
+
+        for i in range(operators.prod(out_shape)):
+            
+            out_index: Index = array(out_shape)
+            a_index: Index = array(a_shape)
+            b_index: Index = array(b_shape)
+
+            to_index(i, out_shape, out_index)
+            broadcast_index(out_index, out_shape, a_shape, a_index)
+            broadcast_index(out_index, out_shape, b_shape, b_index)
+           
+            a_position = index_to_position(a_index, a_strides)
+            b_position = index_to_position(b_index, b_strides)
+            out_position = index_to_position(out_index, out_strides)
+            
+
+            out[out_position] = fn(a_storage[a_position], b_storage[b_position])
+
 
     return _zip
 
@@ -355,7 +385,25 @@ def tensor_reduce(fn: Callable[[float, float], float]) -> Any:
         reduce_dim: int,
     ) -> None:
         # TODO: Implement for Task 2.3.
-        raise NotImplementedError("Need to implement for Task 2.3")
+        # pytest tests/test_tensor.py -k test_reduce_forward_one_dim
+        for i in range(operators.prod(out_shape)):
+            reduce_num = a_shape[reduce_dim]
+            value = 0
+
+            for j in range(reduce_num):
+                a_index: Index = array(out_shape)
+                to_index(i, out_shape, a_index)
+                a_index[reduce_dim] = j 
+                
+                if j == 0:
+                    value = a_storage[index_to_position(a_index, a_strides)]
+                else:
+                    value = fn(value, a_storage[index_to_position(a_index, a_strides)])
+
+            out_index: Index = array(out_shape)
+            to_index(i, out_shape, out_index)
+            out[index_to_position(out_index, out_strides)] = value 
+
 
     return _reduce
 

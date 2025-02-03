@@ -31,11 +31,31 @@ class Module:
 
     def train(self) -> None:
         "Set the mode of this module and all descendent modules to `train`."
-        raise NotImplementedError("Need to include this file from past assignment.")
+        # TODO: Implement for Task 0.4.
+        self.training = True
+        module_list = self.modules()
+        while True:
+            sub_module_list = []
+            for module in module_list:
+                module.training = True
+                sub_module_list.extend(module.modules())
+            module_list = sub_module_list
+            if module_list == []:
+                break
 
     def eval(self) -> None:
         "Set the mode of this module and all descendent modules to `eval`."
-        raise NotImplementedError("Need to include this file from past assignment.")
+        # TODO: Implement for Task 0.4.
+        self.training = False
+        module_list = self.modules()
+        while True:
+            sub_module_list = []
+            for module in module_list:
+                module.training = False
+                sub_module_list.extend(module.modules())
+            module_list = sub_module_list
+            if module_list == []:
+                break
 
     def named_parameters(self) -> Sequence[Tuple[str, Parameter]]:
         """
@@ -45,11 +65,44 @@ class Module:
         Returns:
             The name and `Parameter` of each ancestor parameter.
         """
-        raise NotImplementedError("Need to include this file from past assignment.")
+
+        # TODO: Implement for Task 0.4.
+        def _named_parameters(module: Module, prefix: str):
+            ret = []
+            if prefix != "":
+                prefix  = prefix + "."
+            for name, parameter in module._parameters.items():
+                ret.append((prefix + name, parameter))
+            return ret
+
+        module_list = []
+        parameter_list = _named_parameters(self, "")
+        for name, module in self._modules.items():
+            module_list.append((name, module))
+
+        while True:
+            sub_module_list = []
+            for module_tuple in module_list:
+                module_name = module_tuple[0]
+                module = module_tuple[1]
+
+                parameter_list.extend(_named_parameters(module, module_name))
+
+                for name, module in module._modules.items():
+                    sub_module_list.append((module_name + "." + name, module))
+            module_list = sub_module_list
+            if module_list == []:
+                break
+        return parameter_list
 
     def parameters(self) -> Sequence[Parameter]:
         "Enumerate over all the parameters of this module and its descendents."
-        raise NotImplementedError("Need to include this file from past assignment.")
+        # TODO: Implement for Task 0.4.
+        ret = []
+        parameter_list = self.named_parameters()
+        for parameter_tuple in parameter_list:
+            ret.append(parameter_tuple[1])
+        return ret
 
     def add_parameter(self, k: str, v: Any) -> Parameter:
         """
@@ -115,9 +168,9 @@ class Module:
 
 class Parameter:
     """
-    A Parameter is a special container stored in a `Module`.
+    A Parameter is a special container stored in a :class:`Module`.
 
-    It is designed to hold a `Variable`, but we allow it to hold
+    It is designed to hold a :class:`Variable`, but we allow it to hold
     any value for testing.
     """
 

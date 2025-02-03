@@ -8,7 +8,7 @@ import numpy as np
 import numpy.typing as npt
 from numpy import array, float64
 from typing_extensions import TypeAlias
-
+import copy
 from .operators import prod
 
 MAX_DIMS = 32
@@ -42,9 +42,13 @@ def index_to_position(index: Index, strides: Strides) -> int:
     Returns:
         Position in storage
     """
-
+    #index: (1, 0); strides: (5, 1) result: 5
+    #index: (1, 2); strides: (5, 1) result: 7
     # TODO: Implement for Task 2.1.
-    raise NotImplementedError("Need to implement for Task 2.1")
+    position = 0
+    for i in range(len(index)):
+        position += index[i] * strides[i]
+    return position
 
 
 def to_index(ordinal: int, shape: Shape, out_index: OutIndex) -> None:
@@ -61,7 +65,15 @@ def to_index(ordinal: int, shape: Shape, out_index: OutIndex) -> None:
 
     """
     # TODO: Implement for Task 2.1.
-    raise NotImplementedError("Need to implement for Task 2.1")
+    ret = ordinal
+    enum = prod(shape)
+    for i in range(len(shape)):
+        enum /= shape[i]
+
+        out_index[i] = int(ret / (enum))
+        ret = ret % enum
+
+    
 
 
 def broadcast_index(
@@ -83,9 +95,13 @@ def broadcast_index(
     Returns:
         None
     """
-    # TODO: Implement for Task 2.2.
-    raise NotImplementedError("Need to implement for Task 2.2")
-
+    # TODO: Implement for Task 2.2
+    shape_len = prod(shape.shape)
+    out_index[:] = big_index[-shape_len:]
+    for i in range(shape_len):
+        if out_index[i] >= shape[i]:
+            out_index[i] = 0
+    
 
 def shape_broadcast(shape1: UserShape, shape2: UserShape) -> UserShape:
     """
@@ -102,7 +118,43 @@ def shape_broadcast(shape1: UserShape, shape2: UserShape) -> UserShape:
         IndexingError : if cannot broadcast
     """
     # TODO: Implement for Task 2.2.
-    raise NotImplementedError("Need to implement for Task 2.2")
+    shape = []
+    
+    shape1 = list(shape1[::-1])
+    shape2 = list(shape2[::-1])
+    
+    shape_len = max(len(shape1), len(shape2))
+    shape1_len = len(shape1)
+    shape2_len = len(shape2)
+
+    for index in range(shape_len):
+        if index >= shape1_len and index >= shape2_len:
+            continue
+        elif index >= shape1_len or shape1[index] == 1:
+            if index < shape2_len:
+                shape.append(shape2[index])
+            else:
+                shape.append(1)
+
+        elif index >= shape2_len or shape2[index] == 1:
+            if index < shape1_len:
+                shape.append(shape1[index])
+            else:
+                shape.append(1)
+
+        elif shape1[index] == shape2[index]:
+            shape.append(shape1[index])
+        else:
+            raise IndexingError(f"{shape1} and {shape2} can not match!")
+    
+    shape = shape[::-1]
+    shape = tuple(shape)
+    return shape
+    
+            
+
+
+
 
 
 def strides_from_shape(shape: UserShape) -> UserStrides:
@@ -221,9 +273,24 @@ class TensorData:
         assert list(sorted(order)) == list(
             range(len(self.shape))
         ), f"Must give a position to each dimension. Shape: {self.shape} Order: {order}"
-
+      
         # TODO: Implement for Task 2.1.
-        raise NotImplementedError("Need to implement for Task 2.1")
+        new_td= copy.deepcopy(self)
+        new_td.shape = list(new_td.shape)
+        new_td.strides = list(new_td.strides)
+        
+        for i in range(len(order)):
+            new_td.shape[i] = self.shape[order[i]]
+            new_td.strides[i] = self.strides[order[i]]
+        
+        new_td.shape = tuple(new_td.shape)
+        new_td.strides = tuple(new_td.strides)
+        
+        new_td._shape = array(new_td.shape)
+        new_td._strides = array(new_td.strides)
+        
+        return new_td
+
 
     def to_string(self) -> str:
         s = ""
